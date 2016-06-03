@@ -1,0 +1,86 @@
+Video Archiving Solution
+
+Objective: create a long-term archive structure for videos.
+
+Goals:
+We are building a long-term data storage solution here, not an application
+It must be platform agnostic- should be able to be copied to any major platformthat supports a POSIX style filesystem
+It must not depend upon any specific application to be useful- the content should be as open and transparent as possible using nothing more than OS-level tools.
+It must be “future-proof”, using open standards as much as possible
+The creation of archive assets should use entirely open source or self-written scripts
+
+Design Ideas:
+
+Video Codec/Format: H26.4 .mov, .mp4 format.  Widely used- quite universal- easily re-encoded to other formats as needed.
+
+Storage structure: traditional filesystem, folders denoting library/events.  Mirror the current Final Cut library method being used- only with simple filesystems.  Do not rely on any filesystem metadata (e.g. date) that may be relevant to the clip itself.
+
+Thumbnail images: At least 1 per clip to help visualize the contents w/out having to view the clip itself.  Save as regular JPEG file- perhaps we can pull a few if the clip is very long.  The size of the thumbnail should correspond with the image size within the clip (either DV or HD).  
+
+Database structure: simple JSON file providing event-level metadata.  Pull clip metadata such as create date/encoding/size out into JSON file (to ensure it’s not lost when re-encoded).  Pull out ALL metadata from each clip into this format- why not, maybe it will be useful someday.  We should use proper date formatting so we can re-instantiate a date back into a Javascript object if needed.
+
+Index/Browsing facility: plain HTML/CSS pages generated for each event as a “proof-sheet” using single image thumbnails from each clip.  HTML structure should be browsable directly from filesystem w/out a web server.  Minimal Javascript logic within browser- can pull in the JSON database directly to have an in-page view of all event/clip metadata.  Provide a clickable link for the actual clip file itself so it may be viewed from within the browser.  The index facility should be usable even if the archive itself is being stored on infrastructure that does not support a browser (e.g. a remote fileshare).
+
+Archiving Workflow:  Create a script that generates the correct filesystem structure from a Final Cut library- includes it into the archive directory and generates all necessary database/index artifacts.  Manually “add” the new directory to the top level index page?  Information is only added/removed from the archive- we will not automate “updates”- workflow is always FCP Library->Archive via the scripts.  If Library changes, Archive directory is deleted and re-generated from source.
+
+Long Term Archiving: Simply copy the top-level directory and all underlying directories to create an image of the archive.  The archive may be partitioned by top-level directories (libraries) into individual storage units (e.g TAR files) if necessary.
+
+—————————
+Should be enough space on the Video Archive external disk to create a separate version of all current FCP libraries- create this in parallel on the external disk.
+
+This might also end up being a good structure for photos?
+
+Think makefile. Archiving as one way process from library to archive. Repeated runs are nondestructive.
+
+Use Python to write archive creation script
+Has full POSIX access to filesystem/OS commands
+Will be easier to maintain over time compared to shell- allows for more complexity
+Literally as cross-platform as you can get
+ 
+———————
+Archive layout:
+
+/archive
+	index.html
+	archive.css
+	/library1
+		library.html
+		/event1
+			event1.html
+			event1.json
+			/thumbs
+				clip1.jpg
+				clip2.jpg
+			clip1.mp4
+			clip2.mp4
+		/event2
+		/event3
+	/library2
+		/event1
+		/event2
+		/event3
+
+————————
+Database Structures
+
+Event.json
+
+{
+	“name” : “Around the House”,
+	“clips” : [
+		{
+			“prefix” : “clip1”,
+			“filename” : “clip1.mp4”,
+			“date” : “2012-04-23T18:25:43.511Z”
+		},
+		{
+			“prefix” : “clip2”,
+			“filename” : “clip2.mp4”,
+			“date” : “2012-04-23T18:37:43.511Z”
+		}]
+}
+—————————
+Creating thumbnails in ffmpeg
+~/ffmpeg -i "Clip #146.mov" -r 1 -t 0.03 -s hd720 frame-%2d.jpg
+
+
